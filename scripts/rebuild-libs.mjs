@@ -34,7 +34,7 @@
 import { execSync } from "child_process";
 import { readFileSync, readdirSync, writeFileSync, existsSync, copyFileSync, statSync } from "fs";
 import { resolve, dirname, relative, sep, posix } from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import { buildIecTypesJson } from "./build-iec-types-json.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -102,23 +102,18 @@ async function refreshAndLoadCompiler() {
     );
   }
 
-  const compiler = await import(
-    resolve(projectRoot, "dist/library/library-compiler.js")
-  );
-  const nodeLoader = await import(
-    resolve(projectRoot, "dist/node/library-loader.js")
-  );
-  const nodeConfig = await import(
-    resolve(projectRoot, "dist/node/library-config.js")
-  );
-  const pureConfig = await import(
-    resolve(projectRoot, "dist/library/library-config.js")
-  );
+  // pathToFileURL: on Windows an absolute path ("C:\...") is not a valid
+  // ESM specifier; a file:// URL works on every platform.
+  const distUrl = (p) => pathToFileURL(resolve(projectRoot, p)).href;
+  const compiler = await import(distUrl("dist/library/library-compiler.js"));
+  const nodeLoader = await import(distUrl("dist/node/library-loader.js"));
+  const nodeConfig = await import(distUrl("dist/node/library-config.js"));
+  const pureConfig = await import(distUrl("dist/library/library-config.js"));
   const codesysImport = await import(
-    resolve(projectRoot, "dist/library/codesys-import/index.js")
+    distUrl("dist/library/codesys-import/index.js")
   );
   const stdFnRegistry = await import(
-    resolve(projectRoot, "dist/semantic/std-function-registry.js")
+    distUrl("dist/semantic/std-function-registry.js")
   );
   compileStlib = compiler.compileStlib;
   loadStlibFromFile = nodeLoader.loadStlibFromFile;

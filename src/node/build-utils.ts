@@ -18,6 +18,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, statSync } from "node:fs";
 import { platform } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { extractIncludePaths } from "../cxx-flags.js";
 
@@ -67,7 +68,10 @@ export function findRuntimeIncludeDir(cxxFlags: string): string | null {
   // From import.meta.url (ESM dev mode)
   try {
     if (typeof import.meta?.url === "string") {
-      const scriptDir = dirname(new URL(import.meta.url).pathname);
+      // fileURLToPath, not URL.pathname: on Windows the latter is "/C:/..."
+      // and resolves to a non-existent path, so the dev-mode CLI cannot find
+      // bundled libs or runtime headers.
+      const scriptDir = dirname(fileURLToPath(import.meta.url));
       candidates.push(resolve(scriptDir, "runtime", "include"));
       // npm/built layout: dist/node/ → ../../src/runtime/include.
       // (src/node/ dev layout resolves to the same src/runtime/include.)
@@ -132,7 +136,10 @@ export function findBundledLibsDir(): string | null {
   // From import.meta.url (ESM dev mode)
   try {
     if (typeof import.meta?.url === "string") {
-      const scriptDir = dirname(new URL(import.meta.url).pathname);
+      // fileURLToPath, not URL.pathname: on Windows the latter is "/C:/..."
+      // and resolves to a non-existent path, so the dev-mode CLI cannot find
+      // bundled libs or runtime headers.
+      const scriptDir = dirname(fileURLToPath(import.meta.url));
       // src/node/build-utils.ts → ../../libs/  or  dist/node/build-utils.js → ../../libs/
       candidates.push(resolve(scriptDir, "..", "..", "libs"));
       candidates.push(resolve(scriptDir, "..", "libs"));
